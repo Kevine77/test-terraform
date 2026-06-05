@@ -1,11 +1,8 @@
 name: Terraform Apply
 
 on:
-
   push:
-
     branches:
-
       - main
 
 permissions:
@@ -20,6 +17,11 @@ jobs:
       MONGODB_ATLAS_PUBLIC_KEY: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
       MONGODB_ATLAS_PRIVATE_KEY: ${{ secrets.MONGODB_ATLAS_PRIVATE_KEY }}
 
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -33,7 +35,7 @@ jobs:
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -reconfigure
 
       - name: Terraform Plan
         run: terraform plan -out=tfplan
