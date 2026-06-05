@@ -2,9 +2,33 @@ atlas_public_key  = "iukfdmyg"
 atlas_private_key = "96fd7cc6-a74d-4a99-8c23-98a68845a13e"
 
 atlas_project_name = "prod-project"
+atlas_project_id   = "6a22265f8cc901c2e2b486d2"
 subscription_id    = "3519cc60-0b7c-4a1b-8e5c-57775b73f035"
+cluster_name       = "prod-multi-region"
 
-resource_group_name = "north-europa"
-vnet_name           = "can-test"
-subnet_name         = "default"
-atlas_project_id    = "6a22265f8cc901c2e2b486d2"
+# Regional configuration map - keyed by location for easy pairing
+regions = {
+  north_europe = {
+    atlas_region      = "EUROPE_NORTH"
+    azure_region      = "North Europe"
+    resource_group    = "north-europa"
+    vnet_tag_key      = "EA_APPID"
+    vnet_tag_value    = "SS12"
+    subnet_name       = "default"
+    instance_size     = "M10"
+    node_count        = 3
+    priority          = 7
+  }
+
+  west_europe = {
+    atlas_region      = "EUROPE_WEST"
+    azure_region      = "West Europe"
+    resource_group    = "west-europa"
+    vnet_tag_key      = "EA_APPID"
+    vnet_tag_value    = "SS1"
+    subnet_name       = "default"
+    instance_size     = "M10"
+    node_count        = 3
+    priority          = 6
+  }
+}

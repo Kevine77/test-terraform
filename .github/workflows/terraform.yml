@@ -41,3 +41,9 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
+
+      - name: Show Discovered VNETs
+        run: terraform output discovered_vnets
+        
+      - name: Show Regional Summary
+        run: terraform output regional_summary

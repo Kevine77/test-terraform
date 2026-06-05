@@ -1,19 +1,24 @@
 
 resource "mongodbatlas_advanced_cluster" "cluster" {
   project_id   = var.atlas_project_id
-  name         = "prod-m10"
-  cluster_type = "REPLICASET"
+  name         = var.cluster_name
+  cluster_type = length(var.regions) > 1 ? "SHARDED" : "REPLICASET"
 
-  replication_specs {
-    region_configs {
-      provider_name = "AZURE"
-      region_name   = "EUROPE_NORTH"
-      priority      = 7
+  # Dynamically create replication specs for each region
+  dynamic "replication_specs" {
+    for_each = var.regions
+    content {
+      region_configs {
+        provider_name = "AZURE"
+        region_name   = replication_specs.value.atlas_region
+        priority      = replication_specs.value.priority
 
-      electable_specs {
-        instance_size = "M10"
-        node_count    = 3
+        electable_specs {
+          instance_size = replication_specs.value.instance_size
+          node_count    = replication_specs.value.node_count
+        }
       }
     }
   }
 }
+
