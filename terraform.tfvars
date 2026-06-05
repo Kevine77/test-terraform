@@ -28,7 +28,7 @@ regions = {
     vnet_tag_value    = "SS1"
     subnet_name       = "default"
     instance_size     = "M10"
-    node_count        = 3
+    node_count        = 2
     priority          = 6
   }
 }
