@@ -37,6 +37,7 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
         region_name   = region_configs.value.atlas_region
 
         # ❌ IMPORTANT: NO priority here at all
+        priority      = lookup(region_configs.value, "priority", 5)
 
         read_only_specs {
           instance_size = region_configs.value.instance_size
