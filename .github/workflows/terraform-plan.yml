@@ -1,8 +1,7 @@
-name: Terraform Apply
+name: Terraform Plan
 
 on:
-  workflow_dispatch:  # Manually triggered from GitHub UI
-
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -45,14 +44,8 @@ jobs:
             -backend-config="container_name=${{ secrets.BACKEND_CONTAINER_NAME }}" \
             -backend-config="key=${{ secrets.BACKEND_KEY }}"
 
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-
-      - name: Show Discovered VNETs
-        run: terraform output discovered_vnets
-        
-      - name: Show Regional Summary
-        run: terraform output regional_summary
+        run: terraform plan
