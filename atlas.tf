@@ -11,14 +11,10 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
   cluster_type = "REPLICASET"
 
   replication_specs {
-
-    # -------------------------
-    # PRIMARY (electable)
-    # -------------------------
     region_configs {
       provider_name = "AZURE"
       region_name   = local.primary_region.atlas_region
-      priority      = 7
+      priority      = local.primary_region.priority
 
       electable_specs {
         instance_size = local.primary_region.instance_size
@@ -26,20 +22,15 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
       }
     }
 
-    # -------------------------
-    # SECONDARY (READ-ONLY)
-    # -------------------------
     dynamic "region_configs" {
       for_each = local.secondary_regions
 
       content {
         provider_name = "AZURE"
         region_name   = region_configs.value.atlas_region
+        priority      = region_configs.value.priority
 
-        # ❌ IMPORTANT: NO priority here at all
-        priority      = lookup(region_configs.value, "priority", 5)
-
-        read_only_specs {
+        electable_specs {
           instance_size = region_configs.value.instance_size
           node_count    = region_configs.value.node_count
         }
