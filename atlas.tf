@@ -1,35 +1,44 @@
-
 resource "mongodbatlas_advanced_cluster" "cluster" {
   project_id   = var.atlas_project_id
   name         = var.cluster_name
   cluster_type = "REPLICASET"
 
-  # Multi-region replica set - primary and secondary regions
+  # Ensure deterministic ordering of regions
+  locals {
+    region_list = [for k, v in var.regions : merge(v, { key = k })]
+
+    primary_region    = local.region_list[0]
+    secondary_regions = slice(local.region_list, 1, length(local.region_list))
+  }
+
+  # Primary region (electable)
   replication_specs {
-    # Primary region (first region in map)
     region_configs {
       provider_name = "AZURE"
-      region_name   = var.regions[keys(var.regions)[0]].atlas_region
+      region_name   = local.primary_region.atlas_region
       priority      = 7
+
       electable_specs {
-        instance_size = var.regions[keys(var.regions)[0]].instance_size
-        node_count    = var.regions[keys(var.regions)[0]].node_count
+        instance_size = local.primary_region.instance_size
+        node_count    = local.primary_region.node_count
       }
     }
 
-    # Secondary regions (remaining regions in map) - read-only
+    # Secondary regions (read-only)
     dynamic "region_configs" {
-      for_each = slice(keys(var.regions), 1, length(var.regions))
+      for_each = local.secondary_regions
+
       content {
         provider_name = "AZURE"
-        region_name   = var.regions[region_configs.value].atlas_region
-        priority      = var.regions[region_configs.value].priority
+        region_name   = region_configs.value.atlas_region
+
+        # ❌ IMPORTANT: no priority allowed here
+
         read_only_specs {
-          instance_size = var.regions[region_configs.value].instance_size
-          node_count    = var.regions[region_configs.value].node_count
+          instance_size = region_configs.value.instance_size
+          node_count    = region_configs.value.node_count
         }
       }
     }
   }
 }
-
