@@ -23,6 +23,7 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
       content {
         provider_name = "AZURE"
         region_name   = var.regions[region_configs.value].atlas_region
+        priority      = var.regions[region_configs.value].priority
         read_only_specs {
           instance_size = var.regions[region_configs.value].instance_size
           node_count    = var.regions[region_configs.value].node_count
