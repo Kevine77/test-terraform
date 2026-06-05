@@ -17,13 +17,12 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
       }
     }
 
-    # Secondary regions (remaining regions in map)
+    # Secondary regions (remaining regions in map) - read-only
     dynamic "region_configs" {
       for_each = slice(keys(var.regions), 1, length(var.regions))
       content {
         provider_name = "AZURE"
         region_name   = var.regions[region_configs.value].atlas_region
-        priority      = var.regions[region_configs.value].priority
         read_only_specs {
           instance_size = var.regions[region_configs.value].instance_size
           node_count    = var.regions[region_configs.value].node_count
