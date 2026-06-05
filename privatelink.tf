@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------
-# Azure discovery for each configured region
+# Lookup Azure resource groups for each configured region
 # -------------------------------------------------------------------
 
 data "azurerm_resource_group" "rg" {
@@ -7,6 +7,10 @@ data "azurerm_resource_group" "rg" {
 
   name = each.value.resource_group
 }
+
+# -------------------------------------------------------------------
+# Find VNETs by required tag in each resource group
+# -------------------------------------------------------------------
 
 data "azurerm_resources" "vnet_by_tag" {
   for_each = var.regions
@@ -19,12 +23,20 @@ data "azurerm_resources" "vnet_by_tag" {
   }
 }
 
+# -------------------------------------------------------------------
+# Resolve the discovered VNET from the returned resource ID
+# -------------------------------------------------------------------
+
 data "azurerm_virtual_network" "vnet" {
   for_each = var.regions
 
   resource_group_name = data.azurerm_resource_group.rg[each.key].name
   name                = split("/", data.azurerm_resources.vnet_by_tag[each.key].resources[0].id)[8]
 }
+
+# -------------------------------------------------------------------
+# Lookup subnet for each region
+# -------------------------------------------------------------------
 
 data "azurerm_subnet" "subnet" {
   for_each = var.regions
@@ -35,10 +47,10 @@ data "azurerm_subnet" "subnet" {
 }
 
 # -------------------------------------------------------------------
-# Atlas Private Endpoint service per Azure region
+# Create Atlas PrivateLink endpoint service in each Azure region
 # IMPORTANT:
-# - Use Azure region CODE here, not Atlas region name
-# - Examples: northeurope, westeurope, eastus2
+# - For Atlas cluster deployment use atlas_region (e.g. EUROPE_NORTH)
+# - For Atlas PrivateLink on Azure use azure_region (e.g. northeurope)
 # -------------------------------------------------------------------
 
 resource "mongodbatlas_privatelink_endpoint" "atlas" {
@@ -46,7 +58,7 @@ resource "mongodbatlas_privatelink_endpoint" "atlas" {
 
   project_id    = var.atlas_project_id
   provider_name = "AZURE"
-  region        = each.value.azure_region_code
+  region        = each.value.azure_region
 
   depends_on = [mongodbatlas_advanced_cluster.cluster]
 
@@ -57,7 +69,7 @@ resource "mongodbatlas_privatelink_endpoint" "atlas" {
 }
 
 # -------------------------------------------------------------------
-# Azure Private Endpoint connected to Atlas Private Link service
+# Create Azure Private Endpoint connected to the Atlas service
 # -------------------------------------------------------------------
 
 resource "azurerm_private_endpoint" "atlas" {
@@ -79,16 +91,16 @@ resource "azurerm_private_endpoint" "atlas" {
 }
 
 # -------------------------------------------------------------------
-# Register Azure Private Endpoint back in Atlas
+# Register Azure Private Endpoint back with Atlas
 # -------------------------------------------------------------------
 
 resource "mongodbatlas_privatelink_endpoint_service" "atlas_service" {
   for_each = var.regions
 
-  project_id                 = var.atlas_project_id
-  private_link_id            = mongodbatlas_privatelink_endpoint.atlas[each.key].private_link_id
-  provider_name              = "AZURE"
-  endpoint_service_id        = azurerm_private_endpoint.atlas[each.key].id
+  project_id                  = var.atlas_project_id
+  private_link_id             = mongodbatlas_privatelink_endpoint.atlas[each.key].private_link_id
+  provider_name               = "AZURE"
+  endpoint_service_id         = azurerm_private_endpoint.atlas[each.key].id
   private_endpoint_ip_address = azurerm_private_endpoint.atlas[each.key].private_service_connection[0].private_ip_address
 
   depends_on = [azurerm_private_endpoint.atlas]
