@@ -11,6 +11,7 @@ regions = {
   north_europe = {
     atlas_region      = "EUROPE_NORTH"
     azure_region      = "North Europe"
+    azure_region_code = "northeurope"
     resource_group    = "north-europa"
     vnet_tag_key      = "EA_APPID"
     vnet_tag_value    = "SS12"
@@ -21,8 +22,8 @@ regions = {
   }
 
   west_europe = {
-    atlas_region      = "EUROPE_WEST"
     azure_region      = "West Europe"
+    azure_region_code = "westeurope"
     resource_group    = "west-europa"
     vnet_tag_key      = "EA_APPID"
     vnet_tag_value    = "SS1"
