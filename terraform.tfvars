@@ -20,15 +20,14 @@ regions = {
     priority          = 7
   }
 
-  west_europe = {
-    atlas_region      = "EUROPE_WEST"
-    azure_region      = "westeurope"
-    resource_group    = "west-europa"
-    vnet_tag_key      = "EA_APPID"
-    vnet_tag_value    = "SS1"
-    subnet_name       = "default"
-    instance_size     = "M10"
-    node_count        = 2
-    priority          = 6
-  }
+ # west_europe = {
+ #   atlas_region      = "EUROPE_WEST"
+ #   azure_region      = "westeurope"
+ #   resource_group    = "west-europa"
+ #   vnet_tag_key      = "EA_APPID"
+ #   subnet_name       = "default"
+ #   instance_size     = "M10"
+ #   node_count        = 2
+ #   priority          = 6
+ # }
 }
