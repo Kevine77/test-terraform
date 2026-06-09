@@ -1,25 +1,30 @@
 # -------------------------------------------------------------------
-# Lookup Azure resource groups for each configured region
-# -------------------------------------------------------------------
-
-data "azurerm_resource_group" "rg" {
-  for_each = var.regions
-
-  name = each.value.resource_group
-}
-
-# -------------------------------------------------------------------
-# Find VNETs by required tag in each resource group
+# Find VNETs by required tags (both app tag AND region tag)
+# This ensures we get the correct VNET for each region
 # -------------------------------------------------------------------
 
 data "azurerm_resources" "vnet_by_tag" {
   for_each = var.regions
 
-  resource_group_name = data.azurerm_resource_group.rg[each.key].name
-  type                = "Microsoft.Network/virtualNetworks"
+  type = "Microsoft.Network/virtualNetworks"
 
   required_tags = {
-    (each.value.vnet_tag_key) = each.value.vnet_tag_value
+    (each.value.vnet_tag_key)     = each.value.vnet_tag_value
+    (each.value.region_tag_key)   = each.value.region_tag_value
+  }
+}
+
+# -------------------------------------------------------------------
+# Extract resource group and VNET name from the discovered resource ID
+# Resource ID format: /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Network/virtualNetworks/{vnet}
+# -------------------------------------------------------------------
+
+locals {
+  vnet_info = {
+    for k, v in data.azurerm_resources.vnet_by_tag : k => {
+      resource_group = split("/", v.resources[0].id)[4]
+      vnet_name      = split("/", v.resources[0].id)[8]
+    }
   }
 }
 
@@ -30,8 +35,8 @@ data "azurerm_resources" "vnet_by_tag" {
 data "azurerm_virtual_network" "vnet" {
   for_each = var.regions
 
-  resource_group_name = data.azurerm_resource_group.rg[each.key].name
-  name                = split("/", data.azurerm_resources.vnet_by_tag[each.key].resources[0].id)[8]
+  resource_group_name = local.vnet_info[each.key].resource_group
+  name                = local.vnet_info[each.key].vnet_name
 }
 
 # -------------------------------------------------------------------
@@ -43,7 +48,7 @@ data "azurerm_subnet" "subnet" {
 
   name                 = each.value.subnet_name
   virtual_network_name = data.azurerm_virtual_network.vnet[each.key].name
-  resource_group_name  = data.azurerm_resource_group.rg[each.key].name
+  resource_group_name  = local.vnet_info[each.key].resource_group
 }
 
 # -------------------------------------------------------------------
@@ -76,8 +81,8 @@ resource "azurerm_private_endpoint" "atlas" {
   for_each = var.regions
 
   name                = "atlas-private-endpoint-${each.key}"
-  location            = data.azurerm_resource_group.rg[each.key].location
-  resource_group_name = data.azurerm_resource_group.rg[each.key].name
+  location            = data.azurerm_virtual_network.vnet[each.key].location
+  resource_group_name = local.vnet_info[each.key].resource_group
   subnet_id           = data.azurerm_subnet.subnet[each.key].id
 
   private_service_connection {
