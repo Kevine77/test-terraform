@@ -16,7 +16,7 @@ regions = {
     region_tag_key    = "Az_Region"
     region_tag_value  = "northeurope"
     subnet_name       = "achu-vnet-subnet"
-    instance_size     = "M10"
+    instance_size     = "M30"
     node_count        = 3
     priority          = 7
   }
@@ -29,7 +29,7 @@ regions = {
     region_tag_key    = "Az_Region"
     region_tag_value  = "westeurope"
     subnet_name       = "default"
-    instance_size     = "M10"
+    instance_size     = "M30"
     node_count        = 3
     priority          = 6
   }
