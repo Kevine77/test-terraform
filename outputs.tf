@@ -43,7 +43,7 @@ output "regional_private_endpoints" {
       private_link_id              = endpoint.private_link_id
       private_link_service_name    = endpoint.private_link_service_name
       status                       = endpoint.status
-      azure_resource_group         = data.azurerm_resource_group.rg[region].name
+      azure_resource_group         = local.vnet_info[region].resource_group
       azure_vnet                   = data.azurerm_virtual_network.vnet[region].name
       azure_subnet                 = data.azurerm_subnet.subnet[region].name
       private_endpoint_id          = azurerm_private_endpoint.atlas[region].id
