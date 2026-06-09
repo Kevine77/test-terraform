@@ -1,7 +1,8 @@
 resource "mongodbatlas_advanced_cluster" "cluster" {
   project_id   = var.atlas_project_id
   name         = var.cluster_name
-  cluster_type = "SHARDED"
+  
+  cluster_type = "GEOSHARDED"
 
   replication_specs {
     num_shards = 2
