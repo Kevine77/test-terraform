@@ -25,6 +25,9 @@ jobs:
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
+      TF_LOG: DEBUG
+      TF_LOG_PATH: terraform-debug.log
+
     steps:
       - uses: actions/checkout@v4
 
