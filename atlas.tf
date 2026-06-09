@@ -12,10 +12,11 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
       content {
         provider_name = "AZURE"
         region_name   = region_configs.value.atlas_region
+        priority      = region_configs.value.priority
 
         electable_specs {
           instance_size = region_configs.value.instance_size
-          node_count    = 3
+          node_count    = region_configs.value.node_count
         }
       }
     }

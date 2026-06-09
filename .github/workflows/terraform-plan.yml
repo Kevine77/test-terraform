@@ -46,6 +46,8 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
+      - name: Show Atlas Provider Version
+        run: terraform providers
 
       - name: Terraform Plan
         run: terraform plan
