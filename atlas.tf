@@ -3,18 +3,20 @@ resource "mongodbatlas_advanced_cluster" "cluster" {
   name         = var.cluster_name
   cluster_type = "SHARDED"
 
-  dynamic "replication_specs" {
-    for_each = var.regions
+  replication_specs {
+    num_shards = 2
 
-    content {
-      region_configs {
+    dynamic "region_configs" {
+      for_each = var.regions
+
+      content {
         provider_name = "AZURE"
-        region_name   = replication_specs.value.atlas_region
-        priority      = replication_specs.value.priority
+        region_name   = region_configs.value.atlas_region
+        priority      = region_configs.value.priority
 
         electable_specs {
-          instance_size = replication_specs.value.instance_size
-          node_count    = replication_specs.value.node_count
+          instance_size = region_configs.value.instance_size
+          node_count    = region_configs.value.node_count
         }
       }
     }
