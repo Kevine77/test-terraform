@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   terraform:
-    runs-on: ubuntu-latest/ github-selfhosted-runner-autoscaler-cah
+    runs-on: ubuntu-latest
     environment: nprod
     env:
       MONGODB_ATLAS_PUBLIC_KEY: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
