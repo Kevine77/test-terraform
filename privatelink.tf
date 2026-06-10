@@ -25,14 +25,47 @@ data "azurerm_resources" "vnet_by_tag" {
 }
 
 # -------------------------------------------------------------------
+# List subnets in discovered resource groups so we can pick the achu subnet
+# -------------------------------------------------------------------
+
+data "azurerm_resources" "subnet_by_vnet" {
+  for_each = var.regions
+
+  resource_group_name = data.azurerm_resource_group.rg[each.key].name
+  type                = "Microsoft.Network/virtualNetworks/subnets"
+}
+
+locals {
+  pl_regions = {
+    for k, v in var.regions :
+    k => merge(v, {
+      vnet_name   = split("/", data.azurerm_resources.vnet_by_tag[k].resources[0].id)[8]
+      subnet_name = first([
+        for r in data.azurerm_resources.subnet_by_vnet[k].resources :
+        split("/", r.id)[length(split("/", r.id)) - 1]
+        if split("/", r.id)[8] == split("/", data.azurerm_resources.vnet_by_tag[k].resources[0].id)[8] &&
+           startswith(split("/", r.id)[length(split("/", r.id)) - 1], "achu")
+      ])
+    })
+    if length(data.azurerm_resources.vnet_by_tag[k].resources) > 0 &&
+       length([
+         for r in data.azurerm_resources.subnet_by_vnet[k].resources :
+         split("/", r.id)[length(split("/", r.id)) - 1]
+         if split("/", r.id)[8] == split("/", data.azurerm_resources.vnet_by_tag[k].resources[0].id)[8] &&
+            startswith(split("/", r.id)[length(split("/", r.id)) - 1], "achu")
+       ]) > 0
+  }
+}
+
+# -------------------------------------------------------------------
 # Resolve the discovered VNET from the returned resource ID
 # -------------------------------------------------------------------
 
 data "azurerm_virtual_network" "vnet" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
   resource_group_name = data.azurerm_resource_group.rg[each.key].name
-  name                = split("/", data.azurerm_resources.vnet_by_tag[each.key].resources[0].id)[8]
+  name                = each.value.vnet_name
 }
 
 # -------------------------------------------------------------------
@@ -40,7 +73,7 @@ data "azurerm_virtual_network" "vnet" {
 # -------------------------------------------------------------------
 
 data "azurerm_subnet" "subnet" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
   name                 = each.value.subnet_name
   virtual_network_name = data.azurerm_virtual_network.vnet[each.key].name
@@ -55,7 +88,7 @@ data "azurerm_subnet" "subnet" {
 # -------------------------------------------------------------------
 
 resource "mongodbatlas_privatelink_endpoint" "atlas" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
   project_id    = var.atlas_project_id
   provider_name = "AZURE"
@@ -74,7 +107,7 @@ resource "mongodbatlas_privatelink_endpoint" "atlas" {
 # -------------------------------------------------------------------
 
 resource "azurerm_private_endpoint" "atlas" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
   name                = "atlas-private-endpoint-${each.key}"
   location            = data.azurerm_resource_group.rg[each.key].location
@@ -96,7 +129,7 @@ resource "azurerm_private_endpoint" "atlas" {
 # -------------------------------------------------------------------
 
 resource "mongodbatlas_privatelink_endpoint_service" "atlas_service" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
   project_id                  = var.atlas_project_id
   private_link_id             = mongodbatlas_privatelink_endpoint.atlas[each.key].private_link_id
