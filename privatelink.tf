@@ -24,14 +24,31 @@ data "azurerm_resources" "vnet_by_tag" {
 }
 
 # -------------------------------------------------------------------
-# Resolve the discovered VNET from the returned resource ID
+# Validate that exactly one VNET was found per region
+# -------------------------------------------------------------------
+
+resource "terraform_data" "validate_vnet_lookup" {
+  for_each = var.regions
+
+  lifecycle {
+    precondition {
+      condition     = length(data.azurerm_resources.vnet_by_tag[each.key].resources) == 1
+      error_message = "Expected exactly 1 VNet in resource group '${each.value.resource_group}' for region '${each.key}' with tag '${each.value.vnet_tag_key}=${each.value.vnet_tag_value}', but found ${length(data.azurerm_resources.vnet_by_tag[each.key].resources)}."
+    }
+  }
+}
+
+# -------------------------------------------------------------------
+# Resolve the discovered VNET using the returned resource name
 # -------------------------------------------------------------------
 
 data "azurerm_virtual_network" "vnet" {
   for_each = var.regions
 
+  name                = data.azurerm_resources.vnet_by_tag[each.key].resources[0].name
   resource_group_name = data.azurerm_resource_group.rg[each.key].name
-  name                = split("/", data.azurerm_resources.vnet_by_tag[each.key].resources[0].id)[8]
+
+  depends_on = [terraform_data.validate_vnet_lookup]
 }
 
 # -------------------------------------------------------------------
