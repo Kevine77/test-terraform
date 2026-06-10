@@ -1,4 +1,4 @@
-output "project_id" {
+[07/06/26, 10:52:32] Kevin Elias Thomas: utput "project_id" {
   value       = var.atlas_project_id
   description = "MongoDB Atlas Project ID"
 }
