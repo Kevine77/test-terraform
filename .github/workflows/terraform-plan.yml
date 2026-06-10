@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   terraform:
-    runs-on: ubuntu-latest/ github-selfhosted-runner-autoscaler-cah
+    runs-on: ubuntu-latest
     environment: nprod
     env:
       MONGODB_ATLAS_PUBLIC_KEY: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
@@ -49,3 +49,12 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+      - name: Show Discovered VNETs
+        run: terraform output discovered_vnets
+        
+      - name: Show Regional Summary
+        run: terraform output regional_summary
