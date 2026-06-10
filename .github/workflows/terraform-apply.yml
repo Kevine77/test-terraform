@@ -49,7 +49,7 @@ jobs:
             -backend-config="key=${{ secrets.BACKEND_KEY }}"
 
       - name: Terraform plan
-        run: terraform plan -auto-approve
+        run: terraform plan -out=tfplan
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
