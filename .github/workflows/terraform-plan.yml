@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   terraform:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest/ github-selfhosted-runner-autoscaler-cah
     environment: nprod
     env:
       MONGODB_ATLAS_PUBLIC_KEY: ${{ secrets.MONGODB_ATLAS_PUBLIC_KEY }}
@@ -47,11 +47,5 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Show Atlas Provider Version
-        run: terraform providers
-
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
-      - name: Show Plan
-        run: terraform show -no-color tfplan
+        run: terraform plan

@@ -11,26 +11,11 @@ regions = {
   north_europe = {
     atlas_region      = "EUROPE_NORTH"
     azure_region      = "northeurope"
+    resource_group    = "north-europa"
     vnet_tag_key      = "EA_APPID"
     vnet_tag_value    = "SS12"
-    region_tag_key    = "Azure_Region"
-    region_tag_value  = "northeurope"
     subnet_name       = "default"
     instance_size     = "M10"
     node_count        = 3
     priority          = 7
   }
-
- # west_europe = {
- #   atlas_region      = "EUROPE_WEST"
- #   azure_region      = "westeurope"
- #   vnet_tag_key      = "EA_APPID"
- #   vnet_tag_value    = "SS13"
- #   region_tag_key    = "Azure_Region"
- #   region_tag_value  = "westeurope"
- #   subnet_name       = "default"
- #   instance_size     = "M10"
- #   node_count        = 2
- #   priority          = 6
- # }
-}

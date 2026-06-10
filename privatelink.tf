@@ -1,35 +1,26 @@
+
 # -------------------------------------------------------------------
-# Find VNETs by required tags (both app tag AND region tag)
-# This ensures we get the correct VNET for each region
+# Lookup Azure resource groups for each configured region
+# -------------------------------------------------------------------
+
+data "azurerm_resource_group" "rg" {
+  for_each = var.regions
+
+  name = each.value.resource_group
+}
+
+# -------------------------------------------------------------------
+# Find VNETs by required tag in each resource group
 # -------------------------------------------------------------------
 
 data "azurerm_resources" "vnet_by_tag" {
   for_each = var.regions
 
-  type = "Microsoft.Network/virtualNetworks"
+  resource_group_name = data.azurerm_resource_group.rg[each.key].name
+  type                = "Microsoft.Network/virtualNetworks"
 
   required_tags = {
-    (each.value.vnet_tag_key)     = each.value.vnet_tag_value
-    (each.value.region_tag_key)   = each.value.region_tag_value
-  }
-}
-
-# -------------------------------------------------------------------
-# Extract resource group and VNET name from the discovered resource ID
-# Resource ID format: /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Network/virtualNetworks/{vnet}
-# -------------------------------------------------------------------
-
-locals {
-  pl_regions = {
-    for k, v in var.regions :
-    k => merge(
-      v,
-      {
-        resource_group = split("/", data.azurerm_resources.vnet_by_tag[k].resources[0].id)[4]
-        vnet_name      = split("/", data.azurerm_resources.vnet_by_tag[k].resources[0].id)[8]
-      }
-    )
-    if length(data.azurerm_resources.vnet_by_tag[k].resources) > 0
+    (each.value.vnet_tag_key) = each.value.vnet_tag_value
   }
 }
 
@@ -38,10 +29,10 @@ locals {
 # -------------------------------------------------------------------
 
 data "azurerm_virtual_network" "vnet" {
-  for_each = local.pl_regions
+  for_each = var.regions
 
-  resource_group_name = each.value.resource_group
-  name                = each.value.vnet_name
+  resource_group_name = data.azurerm_resource_group.rg[each.key].name
+  name                = split("/", data.azurerm_resources.vnet_by_tag[each.key].resources[0].id)[8]
 }
 
 # -------------------------------------------------------------------
@@ -49,11 +40,11 @@ data "azurerm_virtual_network" "vnet" {
 # -------------------------------------------------------------------
 
 data "azurerm_subnet" "subnet" {
-  for_each = local.pl_regions
+  for_each = var.regions
 
   name                 = each.value.subnet_name
   virtual_network_name = data.azurerm_virtual_network.vnet[each.key].name
-  resource_group_name  = each.value.resource_group
+  resource_group_name  = data.azurerm_resource_group.rg[each.key].name
 }
 
 # -------------------------------------------------------------------
@@ -64,7 +55,7 @@ data "azurerm_subnet" "subnet" {
 # -------------------------------------------------------------------
 
 resource "mongodbatlas_privatelink_endpoint" "atlas" {
-  for_each = local.pl_regions
+  for_each = var.regions
 
   project_id    = var.atlas_project_id
   provider_name = "AZURE"
@@ -83,11 +74,11 @@ resource "mongodbatlas_privatelink_endpoint" "atlas" {
 # -------------------------------------------------------------------
 
 resource "azurerm_private_endpoint" "atlas" {
-  for_each = local.pl_regions
+  for_each = var.regions
 
   name                = "atlas-private-endpoint-${each.key}"
-  location            = data.azurerm_virtual_network.vnet[each.key].location
-  resource_group_name = each.value.resource_group
+  location            = data.azurerm_resource_group.rg[each.key].location
+  resource_group_name = data.azurerm_resource_group.rg[each.key].name
   subnet_id           = data.azurerm_subnet.subnet[each.key].id
 
   private_service_connection {
@@ -105,7 +96,7 @@ resource "azurerm_private_endpoint" "atlas" {
 # -------------------------------------------------------------------
 
 resource "mongodbatlas_privatelink_endpoint_service" "atlas_service" {
-  for_each = local.pl_regions
+  for_each = var.regions
 
   project_id                  = var.atlas_project_id
   private_link_id             = mongodbatlas_privatelink_endpoint.atlas[each.key].private_link_id
