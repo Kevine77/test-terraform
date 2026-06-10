@@ -19,3 +19,4 @@ regions = {
     node_count        = 3
     priority          = 7
   }
+}
