@@ -20,11 +20,16 @@ data "azurerm_resources" "vnet_by_tag" {
 # -------------------------------------------------------------------
 
 locals {
-  vnet_info = {
-    for k, v in data.azurerm_resources.vnet_by_tag : k => {
-      resource_group = split("/", v.resources[0].id)[4]
-      vnet_name      = split("/", v.resources[0].id)[8]
-    }
+  pl_regions = {
+    for k, v in var.regions :
+    k => merge(
+      v,
+      {
+        resource_group = split("/", data.azurerm_resources.vnet_by_tag[k].resources[0].id)[4]
+        vnet_name      = split("/", data.azurerm_resources.vnet_by_tag[k].resources[0].id)[8]
+      }
+    )
+    if length(data.azurerm_resources.vnet_by_tag[k].resources) > 0
   }
 }
 
@@ -33,10 +38,10 @@ locals {
 # -------------------------------------------------------------------
 
 data "azurerm_virtual_network" "vnet" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
-  resource_group_name = local.vnet_info[each.key].resource_group
-  name                = local.vnet_info[each.key].vnet_name
+  resource_group_name = each.value.resource_group
+  name                = each.value.vnet_name
 }
 
 # -------------------------------------------------------------------
@@ -44,11 +49,11 @@ data "azurerm_virtual_network" "vnet" {
 # -------------------------------------------------------------------
 
 data "azurerm_subnet" "subnet" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
   name                 = each.value.subnet_name
   virtual_network_name = data.azurerm_virtual_network.vnet[each.key].name
-  resource_group_name  = local.vnet_info[each.key].resource_group
+  resource_group_name  = each.value.resource_group
 }
 
 # -------------------------------------------------------------------
@@ -59,7 +64,7 @@ data "azurerm_subnet" "subnet" {
 # -------------------------------------------------------------------
 
 resource "mongodbatlas_privatelink_endpoint" "atlas" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
   project_id    = var.atlas_project_id
   provider_name = "AZURE"
@@ -78,11 +83,11 @@ resource "mongodbatlas_privatelink_endpoint" "atlas" {
 # -------------------------------------------------------------------
 
 resource "azurerm_private_endpoint" "atlas" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
   name                = "atlas-private-endpoint-${each.key}"
   location            = data.azurerm_virtual_network.vnet[each.key].location
-  resource_group_name = local.vnet_info[each.key].resource_group
+  resource_group_name = each.value.resource_group
   subnet_id           = data.azurerm_subnet.subnet[each.key].id
 
   private_service_connection {
@@ -100,7 +105,7 @@ resource "azurerm_private_endpoint" "atlas" {
 # -------------------------------------------------------------------
 
 resource "mongodbatlas_privatelink_endpoint_service" "atlas_service" {
-  for_each = var.regions
+  for_each = local.pl_regions
 
   project_id                  = var.atlas_project_id
   private_link_id             = mongodbatlas_privatelink_endpoint.atlas[each.key].private_link_id
