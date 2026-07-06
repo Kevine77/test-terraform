@@ -1,6 +1,7 @@
 output "project_id" {
   value       = var.atlas_project_id
   description = "MongoDB Atlas Project ID"
+  sensitive = true
 }
 
 output "cluster_name" {
